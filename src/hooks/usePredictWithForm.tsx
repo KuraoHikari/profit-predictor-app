@@ -2,9 +2,16 @@ import { useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import UsePredictionModel from "./usePredictionModel";
 
-const UsePredict = () => {
+const UsePredictWithForm = () => {
  const { model } = UsePredictionModel();
 
+ // Form state
+ const [rdSpend, setRdSpend] = useState("165349");
+ const [administration, setAdministration] = useState("136897");
+ const [marketingSpend, setMarketingSpend] = useState("471784");
+ const [state, setState] = useState("California");
+
+ // Prediction state
  const [predictedProfit, setPredictedProfit] = useState<number | null>(null);
  const [isLoading, setIsLoading] = useState(false);
  const [predictionRange, setPredictionRange] = useState<{
@@ -12,15 +19,7 @@ const UsePredict = () => {
   upper: number;
  } | null>(null);
 
- const handlePredict = async (
-  e: React.FormEvent<HTMLFormElement>,
-  formData: {
-   state: string;
-   rdSpend: string;
-   administration: string;
-   marketingSpend: string;
-  }
- ) => {
+ const handlePredict = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   if (!model) {
    alert("Model is not loaded yet.");
@@ -33,22 +32,21 @@ const UsePredict = () => {
 
   // Simulasi loading agar terlihat lebih interaktif
   await new Promise((resolve) => setTimeout(resolve, 500));
-  //console state
-  console.log("🚀 ~ handlePredict ~ state, rdSpend, administration, marketingSpend:", formData.state, formData.rdSpend, formData.administration, formData.marketingSpend);
+
+  console.log("🚀 ~ handlePredict ~ state, rdSpend, administration, marketingSpend:", state, rdSpend, administration, marketingSpend);
 
   // 1. Menyiapkan input state (one-hot encoding)
   let stateVector = [0, 0, 0]; // [Florida, New York, California]
-  if (formData.state === "Florida") {
+  if (state === "Florida") {
    stateVector = [1, 0, 0];
-  } else if (formData.state === "New York") {
+  } else if (state === "New York") {
    stateVector = [0, 1, 0];
-  } else if (formData.state === "California") {
+  } else if (state === "California") {
    stateVector = [0, 0, 1];
   }
 
   // 2. Menggabungkan semua input menjadi satu array
-
-  const inputData = [...stateVector, parseFloat(formData.rdSpend) || 0, parseFloat(formData.administration) || 0, parseFloat(formData.marketingSpend) || 0];
+  const inputData = [...stateVector, parseFloat(rdSpend) || 0, parseFloat(administration) || 0, parseFloat(marketingSpend) || 0];
   console.log("🚀 ~ handlePredict ~ inputData:", inputData);
 
   // 3. Membuat tensor dari data input
@@ -57,6 +55,7 @@ const UsePredict = () => {
   // 4. Melakukan prediksi dengan model
   const prediction = model.predict(inputTensor);
   const profit = Array.isArray(prediction) ? prediction[0].dataSync()[0] : prediction.dataSync()[0];
+
   // Menghitung rentang prediksi berdasarkan nilai RMSE yang diberikan
   const marginOfError = profit * 0.06; // Menggunakan nilai RMSE
   setPredictionRange({
@@ -68,7 +67,24 @@ const UsePredict = () => {
   setPredictedProfit(profit);
   setIsLoading(false);
  };
- return { isLoading, predictedProfit, predictionRange, handlePredict };
+
+ return {
+  // Form state
+  rdSpend,
+  setRdSpend,
+  administration,
+  setAdministration,
+  marketingSpend,
+  setMarketingSpend,
+  state,
+  setState,
+
+  // Prediction state and handler
+  isLoading,
+  predictedProfit,
+  predictionRange,
+  handlePredict,
+ };
 };
 
-export default UsePredict;
+export default UsePredictWithForm;
